@@ -5,27 +5,64 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 name: Test
-
-env:
-  VERILATOR_VERSION: v5.026
 
 jobs:
   test:
     name: Test
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04 #To Do: Restore it with self-hosted runner
     steps:
-      - uses: actions/checkout@v3
-      - name: Build Container
-        run: docker build -t assassyn-dev .
-      - name: Python Frontend Unit Tests
+      - name: Checkout repository 
+        uses: actions/checkout@v4
+        with:
+             submodules: true
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - name: Check the submodules
         run: |
-          docker run --rm -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn-dev bash -c "
-            pytest -n 8 python/unit-tests;
-            python3 examples/systolic-array/systolic_array.py;
-            python3 examples/systolic-array/memory_systolic_array.py;
-            python3 examples/minor-cpu/src/main.py;
-            python3 examples/minor-cpu/src/br_pre_main.py;
-            python3 examples/priority-queue/main.py;
+          echo "Checking submodules"
+          cd ${{ github.workspace }}/3rd-party/verilator
+          git branch
+          mkdir ${{ github.workspace }}/3rd-party/verilator/install
+          git branch temp_branch_for_merge
+          git checkout master
+          git merge temp_branch_for_merge
+          git branch -d temp_branch_for_merge
+      - name: Build Container
+        run: |
+          docker build -t assassyn:latest .
+          cd ${{ github.workspace }}/3rd-party/verilator
+          git branch
+      - name: Stop & Remove Existing Container
+        run: |
+          docker stop assassyn || true
+          docker container rm assassyn || true
+      - name: Restore Verilator Cache
+        id: cache-verilator 
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/3rd-party/verilator/install 
+          key: ${{ runner.os }}-verilator-${{ hashFiles('verilator/.git/HEAD') }} 
+          restore-keys: |
+            ${{ runner.os }}-verilator- 
+      - name: Build and Install Verilator in Container #if cache miss
+        if: steps.cache-verilator.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss, building and installing Verilator"
+          docker run -v ${{ github.workspace }}:/app assassyn:latest \
+          /bin/zsh -c "
+          cd /app/3rd-party/verilator
+          git branch
+          pwd
+          ls -a
+          autoconf
+          ./configure --prefix=/app/3rd-party/verilator/install
+          make   
+          sudo make install
           "
+      - name: Cleanup Containers
+        run: |
+          docker rm -f $(docker ps -a --filter ancestor=assassyn:latest -q) 2>/dev/null || true
+      
