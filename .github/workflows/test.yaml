@@ -33,10 +33,8 @@ jobs:
         if: steps.cache-verilator.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss, building and installing Verilator"
-          docker run -v ${{ github.workspace }}:/app assassyn:latest \
-          /bin/zsh -c "
-          source ${{ github.workspace }}/scripts/init/verilator.sh $@
-          "
+          docker run -v ${{ github.workspace }}:/app assassyn:latest source scripts/init/verilator.sh $@
+          
       - name: Restore ramulator2 Cache
         id: cache-ramulator
         uses: actions/cache@v4
@@ -49,10 +47,7 @@ jobs:
         if: steps.cache-ramulator.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss, building and installing Ramulator2"
-          docker run -v ${{ github.workspace }}:/app assassyn:latest \
-          /bin/zsh -c "
-          source ${{ github.workspace }}/scripts/init/ramulator2.sh
-          "
+          docker run -v ${{ github.workspace }}:/app assassyn:latest source scripts/init/ramulator2.sh
       - name: Restore circt Cache
         id: cache-circt
         uses: actions/cache@v4
@@ -65,10 +60,7 @@ jobs:
         if: steps.cache-circt.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss, building and installing circt"
-          docker run -v ${{ github.workspace }}:/app assassyn:latest \
-          /bin/zsh -c "
-          source ${{ github.workspace }}/scripts/init/circt.sh $@
-          "
+          docker run -v ${{ github.workspace }}:/app assassyn:latest source scripts/init/circt.sh $@
       - name: Restore wrapper Cache
         id: cache-wrapper
         uses: actions/cache@v4
@@ -81,10 +73,7 @@ jobs:
         if: steps.cache-wrapper.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss, building and installing wrapper"
-          docker run -v ${{ github.workspace }}:/app assassyn:latest \
-          /bin/zsh -c "
-          source ${{ github.workspace }}/scripts/init/wrapper.sh
-          "
+          docker run -v ${{ github.workspace }}:/app assassyn:latest source scripts/init/wrapper.sh
       - name: Run Python Lint
         run:
           docker run -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest pylint --rcfile python/.pylintrc python/assassyn
