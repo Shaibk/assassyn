@@ -14,16 +14,15 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Initialize the Container
-        run: |
-          docker run -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest ./init.sh
-      - uses: actions/checkout@v3
       - name: Build Container
         run: docker build -t assassyn:latest .
       - name: Stop & Remove Existing Container
         run: |
           docker stop assassyn || true
           docker container rm assassyn || true
+      - name: Initialize the Container
+        run: |
+          docker run -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest ./init.sh
       - name: Restore Verilator Cache
         id: cache-verilator 
         uses: actions/cache@v4
