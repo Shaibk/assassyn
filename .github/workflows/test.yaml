@@ -35,7 +35,7 @@ jobs:
           echo "Cache miss, building and installing Verilator"
           docker run -v ${{ github.workspace }}:/app assassyn:latest \
           /bin/zsh -c "
-          source ${{ github.workspace }}/scripts/init/verilator.sh
+          source ${{ github.workspace }}/scripts/init/verilator.sh $@
           "
       - name: Restore ramulator2 Cache
         id: cache-ramulator
@@ -67,7 +67,7 @@ jobs:
           echo "Cache miss, building and installing circt"
           docker run -v ${{ github.workspace }}:/app assassyn:latest \
           /bin/zsh -c "
-          source ${{ github.workspace }}/scripts/init/circt.sh
+          source ${{ github.workspace }}/scripts/init/circt.sh $@
           "
       - name: Restore wrapper Cache
         id: cache-wrapper
