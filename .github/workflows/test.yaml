@@ -60,7 +60,7 @@ jobs:
         if: steps.cache-circt.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss, building and installing circt"
-          docker run -v ${{ github.workspace }}:/app assassyn:latest source /bin/zsh -c "scripts/init/circt.sh $@"
+          docker run -v ${{ github.workspace }}:/app assassyn:latest /bin/zsh -c "source scripts/init/circt.sh $@"
       - name: Restore wrapper Cache
         id: cache-wrapper
         uses: actions/cache@v4
