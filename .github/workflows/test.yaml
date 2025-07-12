@@ -42,7 +42,7 @@ jobs:
         id: cache-ramulator
         uses: actions/cache@v4
         with: 
-          path: ${{ github.workspace }}/3rd-party/ramulator2/build
+          path: ${{ github.workspace }}/3rd-party/ramulator2
           key: ${{ runner.os }}-ramulator-${{ hashFiles('ramulator2/.git/HEAD') }} 
           restore-keys: |
             ${{ runner.os }}-ramulator2- 
