@@ -5,13 +5,13 @@ on:
   pull_request:
     branches:
       - master
-
+  workflow_dispatch:
 name: Test
 
 jobs:
   test:
     name: Test
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Build Container
@@ -29,6 +29,54 @@ jobs:
       - name: Python Frontend Unit Tests
         run: |
           docker run -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest pytest -n 8 python/unit-tests
+      - name: Restore Verilator Cache
+        id: cache-verilator 
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/3rd-party/verilator/install 
+          key: ${{ runner.os }}-verilator-${{ hashFiles('verilator/.git/HEAD') }} 
+          restore-keys: |
+            ${{ runner.os }}-verilator- 
+      - name: Build and Install Verilator in Container #if cache miss
+        if: steps.cache-verilator.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss, building and installing Verilator"
+          docker run -v ${{ github.workspace }}:/app assassyn:latest \
+          /bin/zsh -c "
+          git config --global --add safe.directory /app/3rd-party/verilator
+          cd /app/3rd-party/verilator
+          mkdir ./install
+          git branch
+          pwd
+          ls -a
+          autoconf
+          ./configure --prefix=/app/3rd-party/verilator/install
+          make   
+          make install
+          "
+      - name: Restore ramulator2 Cache
+        id: cache-ramulator
+        uses: actions/cache@v4
+        with: 
+          path: ${{ github.workspace }}/3rd-party/ramulator2/build
+          key: ${{ runner.os }}-ramulator-${{ hashFiles('ramulator2/.git/HEAD') }} 
+          restore-keys: |
+            ${{ runner.os }}-ramulator2- 
+      - name: Build and Install Ramulator in Container #if cache miss
+        if: steps.cache-ramulator.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss, building and installing Ramulator2"
+          docker run -v ${{ github.workspace }}:/app assassyn:latest \
+          /bin/zsh -c "
+          mkdir build
+          cd build
+          cmake ..
+          make -j
+          cp ./ramulator2 ../ramulator2
+          cd ..
+          "
       - name: Cleanup Containers
         run: |
           docker rm -f $(docker ps -a --filter ancestor=assassyn:latest -q) 2>/dev/null || true
+      
+     
